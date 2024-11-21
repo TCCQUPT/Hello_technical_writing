@@ -1,2 +1,7 @@
 # Demo_for_new_TCer
-This repository is for those new to Github to try pull request.
+This repository is for new TCer to make pull requests.
+
+#For TCer
+This may be your first pull request, so just try to leave something memorable.
+
+
