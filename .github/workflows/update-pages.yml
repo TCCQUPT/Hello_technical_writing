@@ -9,10 +9,16 @@ on:
       - 'script.js'
       - 'styles.css'
       - 'index.html'
+      - '.github/workflows/update-pages.yml'
+      - '.github/scripts/generate-cards.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   update-pages:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
       
@@ -20,43 +26,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          
+          cache: 'npm'
+
       - name: Install dependencies
-        run: npm install marked
-        
-      - name: Generate cards
-        run: |
-          node -e "
-            const fs = require('fs');
-            const path = require('path');
-            const marked = require('marked');
-            
-            const tcerDir = 'TCer';
-            const cards = [];
-            
-            fs.readdirSync(tcerDir).forEach(file => {
-              if (file.endsWith('.md')) {
-                const content = fs.readFileSync(path.join(tcerDir, file), 'utf8');
-                const html = marked.parse(content);
-                const name = html.match(/<h1>(.*?)<\/h1>/)[1];
-                const school = html.match(/<h2>(.*?)<\/h2>/)[1];
-                const slogan = html.match(/<h3>(.*?)<\/h3>/)[1];
-                
-                cards.push({name, school, slogan});
-              }
-            });
-            
-            const scriptContent = fs.readFileSync('script.js', 'utf8');
-            const newScript = scriptContent.replace(
-              /const exampleData = {[^}]*}/,
-              `const cardsData = ${JSON.stringify(cards)}`
-            );
-            
-            fs.writeFileSync('script.js', newScript);
-          "
-          
+        run: npm install
+
+      - name: Generate cards and update script.js
+        id: generate
+        run: node .github/scripts/generate-cards.js
+
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
