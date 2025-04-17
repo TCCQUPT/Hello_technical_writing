@@ -1,9 +1,32 @@
-# Demo_for_new_TCer
-This repository is for new TCer to make pull requests.
+# Git 贡献流程学习项目
 
-# For TCer
-This may be your first pull request, so just try to leave something memorable.
+这是一个帮助新手学习 Git 贡献流程的项目。通过简单的文件提交，您可以学习完整的 Git 工作流程。
 
-# Head to Contribution Guide for more information.
+## 如何贡献
 
+1. Fork 这个仓库
+2. 克隆您的 Fork 到本地
+3. 在 `TCer` 文件夹中创建一个新的 Markdown 文件
+4. 文件命名规则：
+   - 使用1-10位英文字符
+   - 例如：`john.md`、`mary.md`
+5. 在文件中添加以下内容：
 
+   ```markdown
+   # 你的名字
+   ## 你的学校
+   ### 你的口号
+   ```
+
+6. 提交您的更改
+7. 创建 Pull Request
+
+## 查看贡献
+
+所有的贡献都会自动显示在项目的主页上，以卡片形式展示。
+
+## 注意事项
+
+- 请确保您的文件名是唯一的
+- 严格遵循文件格式要求
+- 保持内容简洁、积极、友善
