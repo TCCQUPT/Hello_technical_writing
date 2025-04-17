@@ -48,11 +48,12 @@ if (fs.existsSync(scriptPath)) {
     const scriptContent = fs.readFileSync(scriptPath, 'utf8');
     
     // 正则表达式查找 const cardsData = [...] 或 const exampleData = [...]
-    const regex = /(const\s+(?:cardsData|exampleData)\s*=\s*)\[.*?\]\s*;?/;
-    
+    // 修改这里：使用 [\s\S]*? 来匹配包括换行符在内的所有字符
+    const regex = /(const\s+(?:cardsData|exampleData)\s*=\s*)\[[\s\S]*?\]\s*;?/;
+
     if (regex.test(scriptContent)) {
         const newScript = scriptContent.replace(
-          regex, 
+          regex,
           `$1${JSON.stringify(cards, null, 2)};` // 格式化 JSON 输出
         );
         
