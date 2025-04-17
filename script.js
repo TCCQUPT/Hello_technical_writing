@@ -15,14 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 示例数据，将被GitHub Actions替换
     const cardsData = [
   {
-    "name": "N/A",
-    "school": "N/A",
-    "slogan": "N/A"
+    "name": "张三",
+    "school": "北京大学",
+    "slogan": "让开源改变世界！"
   },
   {
-    "name": "N/A",
-    "school": "N/A",
-    "slogan": "N/A"
+    "name": "Ray",
+    "school": "CQUPT",
+    "slogan": "Love words and codes!"
   }
 ];
 
