@@ -14,12 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 示例数据，将被GitHub Actions替换
     const cardsData = [
-        {
-            name: "示例贡献者",
-            school: "示例大学",
-            slogan: "开始你的Git之旅！"
-        }
-    ];
+  {
+    "name": "N/A",
+    "school": "N/A",
+    "slogan": "N/A"
+  },
+  {
+    "name": "N/A",
+    "school": "N/A",
+    "slogan": "N/A"
+  }
+];
 
     // 清空容器并添加所有卡片
     cardsContainer.innerHTML = '';
