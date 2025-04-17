@@ -19,10 +19,10 @@ files.forEach(file => {
       const html = marked.parse(content);
       console.log(`Parsed Markdown for ${file}`);
       
-      // 使用更安全的匹配和默认值
-      const nameMatch = html.match(/<h1>(.*?)<\/h1>/);
-      const schoolMatch = html.match(/<h2>(.*?)<\/h2>/);
-      const sloganMatch = html.match(/<h3>(.*?)<\/h3>/);
+      // Updated regex to match <h1>, <h2>, <h3> with id attributes
+      const nameMatch = html.match(/<h1[^>]*id=["'].*?["']>\s*(.*?)\s*<\/h1>/);
+      const schoolMatch = html.match(/<h2[^>]*id=["'].*?["']>\s*(.*?)\s*<\/h2>/);
+      const sloganMatch = html.match(/<h3[^>]*id=["'].*?["']>\s*(.*?)\s*<\/h3>/);
 
       const name = nameMatch ? nameMatch[1].trim() : 'N/A'; 
       const school = schoolMatch ? schoolMatch[1].trim() : 'N/A';
@@ -33,7 +33,6 @@ files.forEach(file => {
 
     } catch (error) {
       console.error(`Error processing file ${file}: ${error.message}`); 
-      // 打印更详细的错误信息
     }
   } else {
     console.log(`Skipping non-markdown file: ${file}`);
@@ -47,14 +46,14 @@ if (fs.existsSync(scriptPath)) {
     console.log(`Reading existing script file: ${scriptPath}`);
     const scriptContent = fs.readFileSync(scriptPath, 'utf8');
     
-    // 正则表达式查找 const cardsData = [...] 或 const exampleData = [...]
-    // 修改这里：使用 [\s\S]*? 来匹配包括换行符在内的所有字符
+    // Regular expression to find const cardsData = [...] or const exampleData = [...]
+    // Using [\s\S]*? to match all characters, including newlines
     const regex = /(const\s+(?:cardsData|exampleData)\s*=\s*)\[[\s\S]*?\]\s*;?/;
 
     if (regex.test(scriptContent)) {
         const newScript = scriptContent.replace(
           regex,
-          `$1${JSON.stringify(cards, null, 2)};` // 格式化 JSON 输出
+          `$1${JSON.stringify(cards, null, 2)};` // Format JSON output
         );
         
         if (newScript !== scriptContent) { 
@@ -65,9 +64,9 @@ if (fs.existsSync(scriptPath)) {
         }
     } else {
         console.error(`Could not find target variable (cardsData or exampleData) in ${scriptPath}. Cannot update.`);
-        process.exit(1); // 变量未找到，Action 失败
+        process.exit(1); // Variable not found, Action fails
     }
 } else {
     console.error(`${scriptPath} not found. Cannot update cards data.`);
-    process.exit(1); // script.js 不存在，Action 失败
-} 
+    process.exit(1); // script.js not found, Action fails
+}
