@@ -3,117 +3,41 @@ name: Update GitHub Pages
 on:
   push:
     branches:
-      - main # 触发分支
+      - main
     paths:
-      - 'TCer/**' # 监视 TCer 目录
-      - 'script.js' # 监视脚本文件（以防手动更改）
-      - '.github/workflows/update-pages.yml' # 监视工作流自身
+      - 'TCer/**'
+      - 'script.js'
+      - 'styles.css'
+      - 'index.html'
+      - '.github/workflows/update-pages.yml'
+      - '.github/scripts/generate-cards.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   update-pages:
     runs-on: ubuntu-latest
-    permissions: # 需要内容写入权限来更新 gh-pages 分支
-      contents: write 
-      
+    permissions:
+      contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4 # 使用较新版本的 checkout action
-
+      - uses: actions/checkout@v3
+      
       - name: Setup Node.js
-        uses: actions/setup-node@v4 # 使用较新版本的 setup-node action
+        uses: actions/setup-node@v3
         with:
-          node-version: '18' # 或者您希望使用的 Node.js 版本
-          cache: 'npm' # 可选：缓存 npm 依赖以加快速度
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install marked # 安装 Markdown 解析库
+        run: npm install
 
       - name: Generate cards and update script.js
-        id: generate # 给这个步骤一个 id，虽然这里没用到，但有时有用
-        run: |
-          node -e "
-            const fs = require('fs');
-            const path = require('path');
-            const marked = require('marked');
-            
-            const tcerDir = 'TCer';
-            const cards = [];
-            
-            console.log(\`Reading files from directory: ${tcerDir}\`);
-            const files = fs.readdirSync(tcerDir);
-            console.log(\`Found files: ${files.join(', ')}\`);
+        id: generate
+        run: node .github/scripts/generate-cards.js
 
-            files.forEach(file => {
-              if (file.endsWith('.md')) {
-                console.log(\`Processing file: ${file}\`);
-                try { 
-                  const filePath = path.join(tcerDir, file);
-                  const content = fs.readFileSync(filePath, 'utf8');
-                  console.log(\`Read content from ${file}\`);
-                  const html = marked.parse(content);
-                  console.log(\`Parsed Markdown for ${file}\`);
-                  
-                  // 使用更安全的匹配和默认值
-                  const nameMatch = html.match(/<h1>(.*?)<\/h1>/);
-                  const schoolMatch = html.match(/<h2>(.*?)<\/h2>/);
-                  const sloganMatch = html.match(/<h3>(.*?)<\/h3>/);
-          
-                  const name = nameMatch ? nameMatch[1].trim() : 'N/A'; 
-                  const school = schoolMatch ? schoolMatch[1].trim() : 'N/A';
-                  const slogan = sloganMatch ? sloganMatch[1].trim() : 'N/A';
-                  
-                  console.log(\`Extracted data for ${file}: Name=${name}, School=${school}, Slogan=${slogan}\`);
-                  cards.push({name, school, slogan});
-
-                } catch (error) {
-                  console.error(\`Error processing file ${file}: ${error.message}\`); 
-                  // 打印更详细的错误信息
-                }
-              } else {
-                console.log(\`Skipping non-markdown file: ${file}\`);
-              }
-            });
-            
-            console.log(\`Total cards generated: ${cards.length}\`);
-            const scriptPath = 'script.js'; 
-            
-            if (fs.existsSync(scriptPath)) { 
-                console.log(\`Reading existing script file: ${scriptPath}\`);
-                const scriptContent = fs.readFileSync(scriptPath, 'utf8');
-                
-                // 正则表达式查找 const cardsData = [...] 或 const exampleData = [...]
-                const regex = /(const\s+(?:cardsData|exampleData)\s*=\s*)\[.*?\]\s*;?/;
-                
-                if (regex.test(scriptContent)) {
-                    const newScript = scriptContent.replace(
-                      regex, 
-                      \`$1${JSON.stringify(cards, null, 2)};\` // 格式化 JSON 输出
-                    );
-                    
-                    if (newScript !== scriptContent) { 
-                        fs.writeFileSync(scriptPath, newScript);
-                        console.log(\`Successfully updated ${scriptPath} with ${cards.length} cards.\`);
-                    } else {
-                        console.log(\`${scriptPath} content already up-to-date. No changes written.\`);
-                    }
-                } else {
-                    console.error(\`Could not find target variable (cardsData or exampleData) in ${scriptPath}. Cannot update.\`);
-                    process.exit(1); // 变量未找到，Action 失败
-                }
-            } else {
-                console.error(\`${scriptPath} not found. Cannot update cards data.\`);
-                process.exit(1); // script.js 不存在，Action 失败
-            }
-          "
-          
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4 # 使用较新版本的 gh-pages action
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./ # 指定要发布到 gh-pages 分支的目录（. 代表仓库根目录）
-          publish_branch: gh-pages # 明确指定目标分支
-          # user_name: 'github-actions[bot]' # 可选：自定义 commit 用户名
-          # user_email: 'github-actions[bot]@users.noreply.github.com' # 可选：自定义 commit 邮箱
-          # commit_message: Automated update of contributor data # 可选：自定义 commit 信息
-          # keep_files: false # 可选：设为 true 会保留 gh-pages 分支上已有的、但这次推送中不存在的文件
-          # force_orphan: true # 可选：创建一个全新的、没有历史记录的 gh-pages 分支（如果需要彻底清理）
+          publish_dir: ./
+          publish_branch: gh-pages 
