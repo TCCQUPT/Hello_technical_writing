@@ -1,0 +1,12 @@
+{
+  "name": "git-contributors-wall",
+  "version": "1.0.0",
+  "description": "A wall to showcase Git contributors",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "marked": "^4.0.0"
+  }
+} 
