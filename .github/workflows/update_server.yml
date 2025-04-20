@@ -38,7 +38,7 @@ jobs:
       # Step 4: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
         run: |
-          ssh -T -o StrictHostKeyChecking=no your-user@your-server-ip << 'EOF'
+          ssh -T -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
             echo "Current working directory:"
             pwd
             echo "Listing files in current directory:"
