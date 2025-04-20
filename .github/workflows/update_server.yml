@@ -46,18 +46,6 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Deploy Static Resources to Server
-        run: |
-          SOURCE_DIR=$(pwd)
-          TARGET_USER=root
-          TARGET_HOST=162.14.117.33
-          TARGET_DIR=/www/wwwroot/hello_technical_writing
-          echo "Deploying from $SOURCE_DIR to $TARGET_USER@$TARGET_HOST:$TARGET_DIR"
-          rsync -avz --delete "$SOURCE_DIR/" "$TARGET_USER@$TARGET_HOST:$TARGET_DIR/"
-          if [ $? -ne 0 ]; then
-            echo "Error: rsync failed!"
-            exit 1
-          fi
 
       # Step 4: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
@@ -72,7 +60,7 @@ jobs:
             cd /www/wwwroot/hello_technical_writing || mkdir -p /www/wwwroot/hello_technical_writing
             echo "Listing files in target directory before rsync:"
             ls -la /www/wwwroot/hello_technical_writing
-            rsync -avz --delete /home/runner/work/Hello_technical_writing/Hello_technical_writing、 /www/wwwroot/hello_technical_writing/
+            rsync -avz --delete /home/runner/work/Hello_technical_writing/Hello_technical_writing/ /www/wwwroot/hello_technical_writing/
             echo "Listing files in target directory after rsync:"
             ls -la /www/wwwroot/hello_technical_writing
             echo "Static resources have been updated on the server."
