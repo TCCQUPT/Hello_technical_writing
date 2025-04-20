@@ -25,23 +25,34 @@ jobs:
         with:
           ref: gh-pages
 
+      # 确保拉取最新内容
+      - name: Pull latest content from gh-pages
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+
       # Step 2: 设置 SSH 密钥
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Step 3: 列出工作区中的文件（调试用）
+      # Step 3: 验证工作目录中的文件
       - name: Verify files in workspace
         run: |
           echo "Current working directory:"
           pwd
           echo "Listing all files in workspace:"
           ls -R
+          echo "Listing specific files expected in gh-pages branch:"
+          ls -la index.html script.js styles.css
 
       # Step 4: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
         run: |
+          echo "Verify rsync source directory:"
+          ls -R
           ssh -T -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
             echo "Current working directory:"
             pwd
