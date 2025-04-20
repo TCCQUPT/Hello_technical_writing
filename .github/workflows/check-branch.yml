@@ -1,4 +1,4 @@
-name: Branch Check
+name: English Content Check
 
 on:
   pull_request:
@@ -6,38 +6,15 @@ on:
     branches: [ main ]
 
 jobs:
-  branch-check:
-    name: Check Branch Base and Name
+  content-check:
+    name: Check Branch Name and Document Content
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 获取所有历史记录以便检查分支
+          fetch-depth: 0  # 获取完整历史以检查更改
 
-      - name: Check if branch is based on main
-        id: check-base
-        run: |
-          # 获取PR的分支信息
-          SOURCE_BRANCH="${{ github.head_ref }}"
-          
-          # 找出源分支的基础分支
-          echo "检查分支 $SOURCE_BRANCH 是否基于 main..."
-          
-          # 获取分支的共同祖先提交
-          MERGE_BASE=$(git merge-base origin/main origin/$SOURCE_BRANCH)
-          
-          # 检查最近的main分支提交是否在base中
-          MAIN_HEAD=$(git rev-parse origin/main)
-          
-          if git merge-base --is-ancestor $MERGE_BASE origin/main; then
-            echo "✅ 分支 $SOURCE_BRANCH 基于 main 创建"
-            echo "base_check=true" >> $GITHUB_OUTPUT
-          else
-            echo "❌ 分支 $SOURCE_BRANCH 不是基于最新的 main 分支创建"
-            echo "base_check=false" >> $GITHUB_OUTPUT
-          fi
-      
       - name: Check if branch name contains only English characters
         id: check-name
         run: |
@@ -55,17 +32,68 @@ jobs:
             echo "name_check=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate branch checks
-        if: ${{ steps.check-base.outputs.base_check == 'false' || steps.check-name.outputs.name_check == 'false' }}
+      - name: Get changed files
+        id: changed-files
         run: |
-          echo "::error::分支检查失败！"
+          # 获取此PR中修改的文件列表
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check if documents contain only English
+        id: check-content
+        run: |
+          # 初始化检查状态
+          CONTENT_CHECK="true"
+          NON_ENGLISH_FILES=""
           
-          if [[ "${{ steps.check-base.outputs.base_check }}" == "false" ]]; then
-            echo "::error::您的分支必须基于最新的 main 分支创建。请从 main 分支创建新分支再提交 PR。"
-          fi
+          # 获取更改的文件
+          CHANGED_FILES="${{ steps.changed-files.outputs.changed_files }}"
+          
+          echo "检查修改的文档是否只包含英文..."
+          
+          # 遍历每个更改的文件
+          for FILE in $CHANGED_FILES; do
+            # 跳过不存在的文件（可能是删除的文件）
+            if [ ! -f "$FILE" ]; then
+              continue
+            fi
+            
+            # 跳过二进制文件和图片
+            if [[ "$FILE" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]]; then
+              continue
+            fi
+            
+            # 检查文件是否只包含ASCII字符（英文字符、数字和常见符号）
+            # grep -P 使用Perl正则，查找任何非ASCII字符
+            if grep -P '[\x80-\xFF]' "$FILE" > /dev/null; then
+              echo "❌ 文件 $FILE 包含非英文字符"
+              CONTENT_CHECK="false"
+              NON_ENGLISH_FILES="$NON_ENGLISH_FILES\n- $FILE"
+            else
+              echo "✅ 文件 $FILE 只包含英文字符"
+            fi
+          done
+          
+          echo "content_check=$CONTENT_CHECK" >> $GITHUB_OUTPUT
+          echo "non_english_files<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$NON_ENGLISH_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate checks
+        if: ${{ steps.check-name.outputs.name_check == 'false' || steps.check-content.outputs.content_check == 'false' }}
+        run: |
+          echo "::error::内容检查失败！"
           
           if [[ "${{ steps.check-name.outputs.name_check }}" == "false" ]]; then
             echo "::error::分支名只能包含英文字母。"
+          fi
+          
+          if [[ "${{ steps.check-content.outputs.content_check }}" == "false" ]]; then
+            echo "::error::以下文件包含非英文字符："
+            echo -e "${{ steps.check-content.outputs.non_english_files }}"
+            echo "::error::请确保所有文档只包含英文字符。"
           fi
           
           exit 1
@@ -76,18 +104,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const baseCheck = '${{ steps.check-base.outputs.base_check }}' === 'true';
             const nameCheck = '${{ steps.check-name.outputs.name_check }}' === 'true';
+            const contentCheck = '${{ steps.check-content.outputs.content_check }}' === 'true';
+            const nonEnglishFiles = `${{ steps.check-content.outputs.non_english_files }}`;
             
-            let body = '## 分支检查结果\n\n';
-            
-            // 基础分支检查结果
-            if (baseCheck) {
-              body += '✅ **基础分支检查:** 通过！该分支基于 main 分支创建。\n\n';
-            } else {
-              body += '❌ **基础分支检查:** 失败！该分支不是基于最新的 main 分支创建。\n\n';
-              body += '> 请先将您的分支与最新的 main 分支同步，或者从 main 分支创建一个新的分支再提交 PR。\n\n';
-            }
+            let body = '## 英文内容检查结果\n\n';
             
             // 分支名检查结果
             if (nameCheck) {
@@ -97,8 +118,17 @@ jobs:
               body += '> 分支名只能包含英文字母。\n\n';
             }
             
+            // 文档内容检查结果
+            if (contentCheck) {
+              body += '✅ **文档内容检查:** 通过！所有文档只包含英文字符。\n\n';
+            } else {
+              body += '❌ **文档内容检查:** 失败！以下文件包含非英文字符：\n';
+              body += nonEnglishFiles + '\n\n';
+              body += '> 请确保所有文档只包含英文字符。\n\n';
+            }
+            
             // 总结
-            if (baseCheck && nameCheck) {
+            if (nameCheck && contentCheck) {
               body += '🎉 **恭喜！所有检查已通过。**';
             } else {
               body += '⚠️ **请修复上述问题后重新提交。**';
