@@ -34,7 +34,7 @@ jobs:
       # Step 3: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
         run: |
-          ssh -o StrictHostKeyChecking=no your-user@your-server-ip << 'EOF'
+          ssh -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
             cd /www/wwwroot/hello_technical_writing || mkdir -p /www/wwwroot/hello_technical_writing
             rsync -avz --delete ./ /www/wwwroot/hello_technical_writing/
             echo "Static resources have been updated on the server."
