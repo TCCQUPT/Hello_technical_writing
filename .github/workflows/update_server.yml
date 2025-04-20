@@ -3,9 +3,16 @@ name: Deploy Static Resources on script.js Update
 on:
   push:
     branches:
-      - gh-pages
+      - main
     paths:
-      - 'script.js' # 仅当 script.js 文件发生变化时触发
+      - 'TCer/**'
+      - 'script.js'
+      - 'styles.css'
+      - 'index.html'
+      - '.github/workflows/update-pages.yml'
+      - '.github/scripts/generate-cards.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   deploy-static-resources:
