@@ -1,4 +1,4 @@
-name: Deploy Static Resources on Main Branch Update
+name: Deploy Static Resources on gh-pages Branch Update
 
 on:
   push:
@@ -19,29 +19,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: 检出 main 分支
-      - name: Checkout Main Branch
+      # Step 1: 检出 gh-pages 分支
+      - name: Checkout gh-pages Branch
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: gh-pages
 
-      # Step 2: 切换到 gh-pages 分支
-      - name: Switch to gh-pages Branch
-        run: |
-          git fetch origin gh-pages
-          git checkout gh-pages
-
-      # Step 3: 设置 SSH 密钥
+      # Step 2: 设置 SSH 密钥
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Step 4: 列出工作区中的文件（调试用）
-      - name: List files in workspace
-        run: ls -R
+      # Step 3: 列出工作区中的文件（调试用）
+      - name: Verify files in workspace
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Listing all files in workspace:"
+          ls -R
 
-      # Step 5: 将静态资源同步到服务器
+      # Step 4: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
         run: |
           ssh -T -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
