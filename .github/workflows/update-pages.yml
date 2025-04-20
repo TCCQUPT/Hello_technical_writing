@@ -1,4 +1,4 @@
-name: Update GitHub Pages
+name: Update GitHub Pages and Deploy
 
 on:
   push:
@@ -15,7 +15,7 @@ on:
       - 'package-lock.json'
 
 jobs:
-  update-pages:
+  update-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,6 +38,28 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          personal_token: ${{ secrets.PERSONAL_TOKEN }} # 替换 github_token 为 personal_token
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
           publish_dir: ./
-          publish_branch: gh-pages 
+          publish_branch: gh-pages
+      
+      # 等待 gh-pages 分支更新
+      - name: Wait for gh-pages to update
+        run: sleep 30
+      
+      # 检出 gh-pages 分支
+      - name: Checkout gh-pages Branch
+        uses: actions/checkout@v3
+        with:
+          ref: 'gh-pages'
+          path: 'gh-pages-content'
+      
+      # 部署到服务器
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@v2.1.7
+        with:
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USERNAME }}
+          source: "./gh-pages-content/"  # 从检出的gh-pages目录部署
+          target: "/www/wwwroot/hello_technical_writing/"
+          delete: true
