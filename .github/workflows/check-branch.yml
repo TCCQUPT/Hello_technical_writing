@@ -1,0 +1,112 @@
+name: Branch Check
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [ main ]
+
+jobs:
+  branch-check:
+    name: Check Branch Base and Name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 获取所有历史记录以便检查分支
+
+      - name: Check if branch is based on main
+        id: check-base
+        run: |
+          # 获取PR的分支信息
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          
+          # 找出源分支的基础分支
+          echo "检查分支 $SOURCE_BRANCH 是否基于 main..."
+          
+          # 获取分支的共同祖先提交
+          MERGE_BASE=$(git merge-base origin/main origin/$SOURCE_BRANCH)
+          
+          # 检查最近的main分支提交是否在base中
+          MAIN_HEAD=$(git rev-parse origin/main)
+          
+          if git merge-base --is-ancestor $MERGE_BASE origin/main; then
+            echo "✅ 分支 $SOURCE_BRANCH 基于 main 创建"
+            echo "base_check=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ 分支 $SOURCE_BRANCH 不是基于最新的 main 分支创建"
+            echo "base_check=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check if branch name contains only English characters
+        id: check-name
+        run: |
+          # 获取分支名称
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          echo "检查分支名 $BRANCH_NAME 是否只包含英文字符..."
+          
+          # 使用正则表达式检查分支名是否只包含英文字母
+          if [[ $BRANCH_NAME =~ ^[a-zA-Z]+$ ]]; then
+            echo "✅ 分支名 $BRANCH_NAME 只包含英文字符"
+            echo "name_check=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ 分支名 $BRANCH_NAME 包含非英文字符"
+            echo "name_check=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate branch checks
+        if: ${{ steps.check-base.outputs.base_check == 'false' || steps.check-name.outputs.name_check == 'false' }}
+        run: |
+          echo "::error::分支检查失败！"
+          
+          if [[ "${{ steps.check-base.outputs.base_check }}" == "false" ]]; then
+            echo "::error::您的分支必须基于最新的 main 分支创建。请从 main 分支创建新分支再提交 PR。"
+          fi
+          
+          if [[ "${{ steps.check-name.outputs.name_check }}" == "false" ]]; then
+            echo "::error::分支名只能包含英文字母。"
+          fi
+          
+          exit 1
+
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const baseCheck = '${{ steps.check-base.outputs.base_check }}' === 'true';
+            const nameCheck = '${{ steps.check-name.outputs.name_check }}' === 'true';
+            
+            let body = '## 分支检查结果\n\n';
+            
+            // 基础分支检查结果
+            if (baseCheck) {
+              body += '✅ **基础分支检查:** 通过！该分支基于 main 分支创建。\n\n';
+            } else {
+              body += '❌ **基础分支检查:** 失败！该分支不是基于最新的 main 分支创建。\n\n';
+              body += '> 请先将您的分支与最新的 main 分支同步，或者从 main 分支创建一个新的分支再提交 PR。\n\n';
+            }
+            
+            // 分支名检查结果
+            if (nameCheck) {
+              body += '✅ **分支名检查:** 通过！分支名只包含英文字符。\n\n';
+            } else {
+              body += '❌ **分支名检查:** 失败！分支名包含非英文字符。\n\n';
+              body += '> 分支名只能包含英文字母。\n\n';
+            }
+            
+            // 总结
+            if (baseCheck && nameCheck) {
+              body += '🎉 **恭喜！所有检查已通过。**';
+            } else {
+              body += '⚠️ **请修复上述问题后重新提交。**';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
