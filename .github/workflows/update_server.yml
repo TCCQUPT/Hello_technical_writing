@@ -31,11 +31,23 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Step 3: 将静态资源同步到服务器
+      # Step 3: 列出工作区中的文件（调试用）
+      - name: List files in workspace
+        run: ls -R
+
+      # Step 4: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
         run: |
-          ssh -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
+          ssh -T -o StrictHostKeyChecking=no your-user@your-server-ip << 'EOF'
+            echo "Current working directory:"
+            pwd
+            echo "Listing files in current directory:"
+            ls -la
             cd /www/wwwroot/hello_technical_writing || mkdir -p /www/wwwroot/hello_technical_writing
+            echo "Listing files in target directory before rsync:"
+            ls -la /www/wwwroot/hello_technical_writing
             rsync -avz --delete ./ /www/wwwroot/hello_technical_writing/
+            echo "Listing files in target directory after rsync:"
+            ls -la /www/wwwroot/hello_technical_writing
             echo "Static resources have been updated on the server."
           EOF
