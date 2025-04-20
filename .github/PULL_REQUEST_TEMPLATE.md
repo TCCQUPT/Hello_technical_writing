@@ -1,9 +1,9 @@
 # Pull Request
 
 ## 提交时间 / Submission Time
-<!-- 请填写提交时间，格式为YYYY-MM-DD HH:MM:SS -->
-<!-- Please fill in the submission time in YYYY-MM-DD HH:MM:SS format -->
-提交时间 / Submission Time: <!-- 例如: 2025-04-20 11:43:36 -->
+<!-- 请填写提交时间，格式为YYYY-MM-DD，如2025-04-20 -->
+<!-- Please fill in the submission time in YYYY-MM-DD format, like 2025-04-20 -->
+提交时间 / Submission Time:
 
 ## 提交人性别 / Contributor Gender
 <!-- 请选择您的性别 / Please select your gender -->
