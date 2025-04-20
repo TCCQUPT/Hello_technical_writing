@@ -1,3 +1,3 @@
 # NaNa
-## CQUPT2221111aaaaaaaaaaa
+## CQUPT
 ### Love words and codes!
