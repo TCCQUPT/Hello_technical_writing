@@ -19,38 +19,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: 检出 main 分支
-      - name: Checkout main Branch
+      # Step 1: 检出 gh-pages 分支
+      - name: Checkout gh-pages Branch
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: gh-pages
 
-      # Step 2: 验证工作区中的文件
+      - name: Pull latest content from gh-pages
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+
+      # Step 2: 验证工作区中的文件（调试用）
       - name: Verify files in workspace
         run: |
           echo "Current working directory:"
           pwd
           echo "Listing all files in workspace:"
           ls -R
+          echo "Verifying specific files in gh-pages branch:"
+          ls -la index.html script.js styles.css
 
       # Step 3: 设置 SSH 密钥
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Deploy Static Resources to Server
+        run: |
+          SOURCE_DIR=$(pwd)
+          TARGET_USER=root
+          TARGET_HOST=162.14.117.33
+          TARGET_DIR=/www/wwwroot/hello_technical_writing
+          echo "Deploying from $SOURCE_DIR to $TARGET_USER@$TARGET_HOST:$TARGET_DIR"
+          rsync -avz --delete "$SOURCE_DIR/" "$TARGET_USER@$TARGET_HOST:$TARGET_DIR/"
+          if [ $? -ne 0 ]; then
+            echo "Error: rsync failed!"
+            exit 1
+          fi
 
       # Step 4: 将静态资源同步到服务器
       - name: Deploy Static Resources to Server
         run: |
-          SOURCE_DIR=/home/runner/work/Hello_technical_writing/Hello_technical_writing
-          TARGET_DIR=/www/wwwroot/hello_technical_writing
-          ssh -T -o StrictHostKeyChecking=no root@162.14.117.33 << EOF
-            echo "Running rsync on remote server..."
-            mkdir -p \$TARGET_DIR
-            rsync -avz --delete \$SOURCE_DIR/ \$TARGET_DIR/
-            if [ \$? -ne 0 ]; then
-              echo "Error: rsync failed!"
-              exit 1
-            fi
+          echo "Verify rsync source directory before deploying:"
+          ls -R /home/runner/work/Hello_technical_writing/Hello_technical_writing
+          ssh -T -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
+            echo "Current working directory:"
+            pwd
+            echo "Listing files in current directory on server:"
+            ls -la
+            cd /www/wwwroot/hello_technical_writing || mkdir -p /www/wwwroot/hello_technical_writing
+            echo "Listing files in target directory before rsync:"
+            ls -la /www/wwwroot/hello_technical_writing
+            rsync -avz --delete /home/runner/work/Hello_technical_writing/Hello_technical_writing、 /www/wwwroot/hello_technical_writing/
+            echo "Listing files in target directory after rsync:"
+            ls -la /www/wwwroot/hello_technical_writing
             echo "Static resources have been updated on the server."
           EOF
