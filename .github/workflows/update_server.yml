@@ -46,7 +46,7 @@ jobs:
             cd /www/wwwroot/hello_technical_writing || mkdir -p /www/wwwroot/hello_technical_writing
             echo "Listing files in target directory before rsync:"
             ls -la /www/wwwroot/hello_technical_writing
-            rsync -avz --delete ./ /www/wwwroot/hello_technical_writing/
+            rsync -avz --delete /home/runner/work/Hello_technical_writing/Hello_technical_writing/ /www/wwwroot/hello_technical_writing/
             echo "Listing files in target directory after rsync:"
             ls -la /www/wwwroot/hello_technical_writing
             echo "Static resources have been updated on the server."
