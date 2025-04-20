@@ -4,29 +4,33 @@ on:
   push:
     branches:
       - gh-pages
+    paths:
+      - 'script.js' # 仅当 script.js 文件发生变化时触发
 
 jobs:
-  deploy:
+  deploy-script:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: 检查出 gh-pages 分支
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-      with:
-        ref: gh-pages
+      # Step 1: 检查出 gh-pages 分支
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
 
-    # Step 2: 设置 SSH 密钥
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.5.3
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      # Step 2: 设置 SSH 密钥
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    # Step 3: 部署到你的服务器
-    - name: Deploy to Server
-      run: |
-        ssh -o StrictHostKeyChecking=no your-user@your-server-ip << 'EOF'
-          cd /www/wwwroot/hello_technical_writing
-          git pull origin gh-pages
-          echo "Deployment completed!"
-        EOF
+      # Step 3: 拉取 script.js 到服务器
+      - name: Deploy script.js to Server
+        run: |
+          ssh -o StrictHostKeyChecking=no your-user@your-server-ip << 'EOF'
+            cd /www/wwwroot/hello_technical_writing
+            git fetch origin gh-pages
+            git checkout gh-pages
+            git pull origin gh-pages
+            echo "script.js has been updated on the server."
+          EOF
