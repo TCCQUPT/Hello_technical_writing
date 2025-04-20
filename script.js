@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   },
   {
     "name": "NaNa",
-    "school": "CQUPT2221111aaaaa",
+    "school": "CQUPT2221111aaaaaaaaaaa",
     "slogan": "Love words and codes!"
   },
   {
