@@ -53,13 +53,23 @@ jobs:
           ref: 'gh-pages'
           path: 'gh-pages-content'
       
-      # 部署到服务器
-      - name: Deploy to Server
-        uses: easingthemes/ssh-deploy@v2.1.7
+      # 使用 appleboy/ssh-action 创建目标目录
+      - name: Create target directory
+        uses: appleboy/ssh-action@master
         with:
-          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          remote_host: ${{ secrets.SSH_HOST }}
-          remote_user: ${{ secrets.SSH_USERNAME }}
-          source: "./gh-pages-content/"  # 从检出的gh-pages目录部署
-          target: "/www/wwwroot/hello_technical_writing/"
-          delete: true
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p /www/wwwroot/hello_technical_writing
+      
+      # 使用 appleboy/scp-action 部署文件
+      - name: Copy files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./gh-pages-content/*"
+          target: "/www/wwwroot/hello_technical_writing"
+          rm: true
