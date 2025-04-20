@@ -1,6 +1,6 @@
 # Hello Technical Writing
 
-这是一个帮助贡献者学习Docs-like-code贡献流程的项目。通过简单的文件提交，您可以学习完整的文档贡献工作流程，希望可以成为你踏上技术写作领域的Hello World。
+这是一个帮助贡献者学习Docs-like-code贡献流程的项目。通过简单的文件提交，您可以学习完整的文档贡献工作流程，试试你技术写作之路上的Hello World吧。
 
 ## 如何贡献
 
