@@ -1,3 +1,19 @@
+name: Deploy Static Resources on gh-pages Branch Update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'TCer/**'
+      - 'script.js'
+      - 'styles.css'
+      - 'index.html'
+      - '.github/workflows/update-pages.yml'
+      - '.github/scripts/generate-cards.js'
+      - 'package.json'
+      - 'package-lock.json'
+
 jobs:
   deploy-static-resources:
     runs-on: ubuntu-latest
