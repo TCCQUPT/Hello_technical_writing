@@ -51,7 +51,7 @@ jobs:
       - name: Deploy Static Resources to Server
         run: |
           echo "Verify rsync source directory before deploying:"
-          ls -R /home/runner/work/{repo}/{repo}/
+          ls -R /home/runner/work/Hello_technical_writing/Hello_technical_writing
           ssh -T -o StrictHostKeyChecking=no root@162.14.117.33 << 'EOF'
             echo "Current working directory:"
             pwd
