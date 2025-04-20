@@ -1,4 +1,4 @@
-name: Deploy to Server on gh-pages Update
+name: Deploy Static Resources on script.js Update
 
 on:
   push:
@@ -8,11 +8,11 @@ on:
       - 'script.js' # 仅当 script.js 文件发生变化时触发
 
 jobs:
-  deploy-script:
+  deploy-static-resources:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: 检查出 gh-pages 分支
+      # Step 1: 检出整个仓库
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
@@ -24,13 +24,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Step 3: 拉取 script.js 到服务器
-      - name: Deploy script.js to Server
+      # Step 3: 将静态资源同步到服务器
+      - name: Deploy Static Resources to Server
         run: |
           ssh -o StrictHostKeyChecking=no your-user@your-server-ip << 'EOF'
-            cd /www/wwwroot/hello_technical_writing
-            git fetch origin gh-pages
-            git checkout gh-pages
-            git pull origin gh-pages
-            echo "script.js has been updated on the server."
+            cd /www/wwwroot/hello_technical_writing || mkdir -p /www/wwwroot/hello_technical_writing
+            rsync -avz --delete ./ /www/wwwroot/hello_technical_writing/
+            echo "Static resources have been updated on the server."
           EOF
