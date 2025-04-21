@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 示例数据，将被GitHub Actions替换
     const cardsData = [
   {
-    "name": "yiyialways",
+    "name": "Yiyialways",
     "school": "CQUPT",
     "slogan": "Welcome each contributor!"
   },
