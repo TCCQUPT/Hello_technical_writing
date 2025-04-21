@@ -71,5 +71,5 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "./gh-pages-content/*"
-          target: "/www/wwwroot/hello_technical_writing/gh-pages-content"
+          target: "/www/wwwroot/hello_technical_writing"
           rm: false

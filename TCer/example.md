@@ -1,3 +1,3 @@
-# Yiyialways
+# yiyialways
 ## CQUPT
 ### Welcome each contributor!
