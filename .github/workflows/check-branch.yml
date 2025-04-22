@@ -1,11 +1,9 @@
 name: English Content Check
 
-# 确保 workflow 有权限写评论
 permissions:
   issues: write
   pull-requests: write
 
-# 用 pull_request_target 以获得写权限（包括 fork PR）
 on:
   pull_request_target:
     types: [opened, reopened, synchronize]
@@ -20,7 +18,6 @@ jobs:
       content_check: ${{ steps.check-content.outputs.content_check }}
       non_english_files: ${{ steps.check-content.outputs.non_english_files }}
     steps:
-      # 1. 检出 “工作流” 运行所在的主仓库，用来安全地读取 workflow 文件
       - name: Checkout action repo
         uses: actions/checkout@v3
         with:
@@ -28,7 +25,6 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           path: workflow-repo
 
-      # 2. 再检出 PR 的 head 分支代码
       - name: Checkout PR head
         uses: actions/checkout@v3
         with:
@@ -56,7 +52,7 @@ jobs:
           echo "$files" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Check if documents contain only English
+      - name: Check if documents contain only English and ‘#’
         id: check-content
         working-directory: pr-head
         run: |
@@ -65,7 +61,8 @@ jobs:
           for f in ${{ steps.changed-files.outputs.changed_files }}; do
             [ ! -f "$f" ] && continue
             [[ "$f" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]] && continue
-            if grep -P '[\x80-\xFF]' "$f" > /dev/null; then
+            # 只检测中文汉字，允许所有 ASCII（包括 #、字母、数字、标点）
+            if grep -P '\p{Han}' "$f" > /dev/null; then
               CONTENT_CHECK="false"
               NON_EN_FILES="$NON_EN_FILES\n- $f"
             fi
@@ -90,17 +87,22 @@ jobs:
             const okContent = '${{ needs.content-check.outputs.content_check }}' === 'true';
             const files     = `${{ needs.content-check.outputs.non_english_files }}`;
             let body = '## 英文内容检查结果\n\n';
-            if (okName) body += '✅ **分支名检查:** 通过！\n\n';
-            else {
+            if (okName) {
+              body += '✅ **分支名检查:** 通过！\n\n';
+            } else {
               body += '❌ **分支名检查:** 失败！\n> 只允许英文字母。\n\n';
             }
-            if (okContent) body += '✅ **文档内容检查:** 通过！\n\n';
-            else {
-              body += '❌ **文档内容检查:** 失败！以下文件包含非英文字符：\n' 
-                   + files + '\n\n> 请确保所有文档只包含英文。\n\n';
+            if (okContent) {
+              body += '✅ **文档内容检查:** 通过！仅 ASCII 字符（包括 #）\n\n';
+            } else {
+              body += '❌ **文档内容检查:** 失败！以下文件包含中文字符：\n'
+                   + files + '\n\n> 请移除所有中文字符。\n\n';
             }
-            if (okName && okContent) body += '🎉 **全部通过！**';
-            else body += '⚠️ **请修复后重新提交。**';
+            if (okName && okContent) {
+              body += '🎉 **全部通过！**';
+            } else {
+              body += '⚠️ **请修复后重新提交。**';
+            }
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
