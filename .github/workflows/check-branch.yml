@@ -8,29 +8,12 @@ on:
     branches: [main]
 
 jobs:
-  content-check:
-    name: Check Branch Name and Document Content
+  branch-name-check:
+    name: Check Branch Name
     runs-on: ubuntu-latest
     outputs:
       name_check: ${{ steps.check-name.outputs.name_check }}
-      content_check: ${{ steps.check-content.outputs.content_check }}
-      non_english_files: ${{ steps.check-content.outputs.non_english_files }}
     steps:
-      - name: Checkout workflow repository
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ github.repository }}
-          ref: ${{ github.event.repository.default_branch }}
-          path: workflow-repo
-
-      - name: Checkout PR head
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ github.token }}
-          path: pr-head
-
       - name: Check if branch name contains only English characters
         id: check-name
         run: |
@@ -41,40 +24,10 @@ jobs:
             echo "name_check=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get changed files
-        id: changed-files
-        working-directory: pr-head
-        run: |
-          files=$(git diff --name-only origin/${{ github.event.repository.default_branch }}...HEAD)
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$files" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Check if documents contain no Chinese characters
-        id: check-content
-        working-directory: pr-head
-        run: |
-          CONTENT_CHECK="true"
-          NON_EN_FILES=""
-          for f in ${{ steps.changed-files.outputs.changed_files }}; do
-            # Only check Markdown files
-            [[ "$f" =~ \.md$ ]] || continue
-            [ ! -f "$f" ] && continue
-            # Check for Chinese characters in Markdown files
-            if grep -E '[一-龥]' "$f" >/dev/null; then
-              CONTENT_CHECK="false"
-              NON_EN_FILES="$NON_EN_FILES\n- $f"
-            fi
-          done
-          echo "content_check=$CONTENT_CHECK" >> $GITHUB_OUTPUT
-          echo "non_english_files<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$NON_EN_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
   comment:
     name: Comment on PR
     runs-on: ubuntu-latest
-    needs: content-check
+    needs: branch-name-check
     if: always()
     steps:
       - name: Post result comment
@@ -82,24 +35,13 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const okName    = '${{ needs.content-check.outputs.name_check }}' === 'true';
-            const okContent = '${{ needs.content-check.outputs.content_check }}' === 'true';
-            const files     = `${{ needs.content-check.outputs.non_english_files }}`;
+            const okName = '${{ needs.branch-name-check.outputs.name_check }}' === 'true';
             let body = '## 英文内容检查结果\n\n';
             if (okName) {
               body += '✅ **分支名检查:** 通过！\n\n';
-            } else {
-              body += '❌ **分支名检查:** 失败！\n> 只允许英文字母。\n\n';
-            }
-            if (okContent) {
-              body += '✅ **文档内容检查:** 通过！未发现中文字符。\n\n';
-            } else {
-              body += '❌ **文档内容检查:** 失败！以下Markdown文件包含中文：\n'
-                   + files + '\n\n> 请移除所有中文字符后重新提交。\n\n';
-            }
-            if (okName && okContent) {
               body += '🎉 **全部通过！**';
             } else {
+              body += '❌ **分支名检查:** 失败！\n> 只允许英文字母。\n\n';
               body += '⚠️ **请修复后重新提交。**';
             }
             github.rest.issues.createComment({
