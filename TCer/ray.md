@@ -1,3 +1,3 @@
 # ray
 ## CQUPT
-### Love words and codes! haha
+### Love words and code!

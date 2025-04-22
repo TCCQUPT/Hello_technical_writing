@@ -4,6 +4,7 @@ permissions:
   issues: write
   pull-requests: write
 
+# 用 pull_request_target 以获得写权限（包括 fork PR）
 on:
   pull_request_target:
     types: [opened, reopened, synchronize]
@@ -103,6 +104,8 @@ jobs:
             } else {
               body += '⚠️ **请修复后重新提交。**';
             }
+            if (okName && okContent) body += '🎉 **全部通过！**';
+            else body += '⚠️ **请修复后重新提交。**';
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
