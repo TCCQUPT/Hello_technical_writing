@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     "slogan": "Welcome each contributor!"
   },
   {
-    "name": "Ray",
+    "name": "ray",
     "school": "CQUPT",
     "slogan": "Love words and codes!"
   }
