@@ -52,7 +52,7 @@ jobs:
           echo "$files" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Check if documents contain only ASCII and '#'
+      - name: Check if documents contain no Chinese characters
         id: check-content
         working-directory: pr-head
         run: |
@@ -61,8 +61,8 @@ jobs:
           for f in ${{ steps.changed-files.outputs.changed_files }}; do
             [ ! -f "$f" ] && continue
             [[ "$f" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]] && continue
-            # 匹配任意非 ASCII 且非 '#' 的字符
-            if grep -P '[^\x00-\x7F#]' "$f" > /dev/null; then
+            # 如果文件中匹配到任何中文字符，就算失败
+            if grep -E '[一-龥]' "$f" >/dev/null; then
               CONTENT_CHECK="false"
               NON_EN_FILES="$NON_EN_FILES\n- $f"
             fi
@@ -93,10 +93,10 @@ jobs:
               body += '❌ **分支名检查:** 失败！\n> 只允许英文字母。\n\n';
             }
             if (okContent) {
-              body += '✅ **文档内容检查:** 通过！仅 ASCII 字符（包括 #）\n\n';
+              body += '✅ **文档内容检查:** 通过！未发现中文字符。\n\n';
             } else {
-              body += '❌ **文档内容检查:** 失败！以下文件包含非法字符：\n'
-                   + files + '\n\n> 请移除所有非 ASCII 或 # 字符。\n\n';
+              body += '❌ **文档内容检查:** 失败！以下文件包含中文：\n'
+                   + files + '\n\n> 请移除所有中文字符后重新提交。\n\n';
             }
             if (okName && okContent) {
               body += '🎉 **全部通过！**';
