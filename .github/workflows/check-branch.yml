@@ -5,6 +5,10 @@ on:
     types: [opened, reopened, synchronize]
     branches: [ main ]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   content-check:
     name: Check Branch Name and Document Content
