@@ -1,13 +1,14 @@
 name: English Content Check
 
+# 为 GITHUB_TOKEN 授予写 issue/PR 的权限
+permissions:
+  issues: write
+  pull-requests: write
+
 on:
   pull_request:
     types: [opened, reopened, synchronize]
     branches: [ main ]
-
-permissions:
-  pull-requests: write
-  contents: read
 
 jobs:
   content-check:
@@ -17,17 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 获取完整历史以检查更改
+          fetch-depth: 0
 
       - name: Check if branch name contains only English characters
         id: check-name
         run: |
-          # 获取分支名称
           BRANCH_NAME="${{ github.head_ref }}"
-          
           echo "检查分支名 $BRANCH_NAME 是否只包含英文字符..."
-          
-          # 使用正则表达式检查分支名是否只包含英文字母
           if [[ $BRANCH_NAME =~ ^[a-zA-Z]+$ ]]; then
             echo "✅ 分支名 $BRANCH_NAME 只包含英文字符"
             echo "name_check=true" >> $GITHUB_OUTPUT
@@ -39,7 +36,6 @@ jobs:
       - name: Get changed files
         id: changed-files
         run: |
-          # 获取此PR中修改的文件列表
           CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
@@ -48,29 +44,11 @@ jobs:
       - name: Check if documents contain only English
         id: check-content
         run: |
-          # 初始化检查状态
           CONTENT_CHECK="true"
           NON_ENGLISH_FILES=""
-          
-          # 获取更改的文件
-          CHANGED_FILES="${{ steps.changed-files.outputs.changed_files }}"
-          
-          echo "检查修改的文档是否只包含英文..."
-          
-          # 遍历每个更改的文件
-          for FILE in $CHANGED_FILES; do
-            # 跳过不存在的文件（可能是删除的文件）
-            if [ ! -f "$FILE" ]; then
-              continue
-            fi
-            
-            # 跳过二进制文件和图片
-            if [[ "$FILE" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]]; then
-              continue
-            fi
-            
-            # 检查文件是否只包含ASCII字符（英文字符、数字和常见符号）
-            # grep -P 使用Perl正则，查找任何非ASCII字符
+          for FILE in ${{ steps.changed-files.outputs.changed_files }}; do
+            [ ! -f "$FILE" ] && continue
+            [[ "$FILE" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]] && continue
             if grep -P '[\x80-\xFF]' "$FILE" > /dev/null; then
               echo "❌ 文件 $FILE 包含非英文字符"
               CONTENT_CHECK="false"
@@ -79,7 +57,6 @@ jobs:
               echo "✅ 文件 $FILE 只包含英文字符"
             fi
           done
-          
           echo "content_check=$CONTENT_CHECK" >> $GITHUB_OUTPUT
           echo "non_english_files<<EOF" >> $GITHUB_OUTPUT
           echo -e "$NON_ENGLISH_FILES" >> $GITHUB_OUTPUT
@@ -89,58 +66,45 @@ jobs:
         if: ${{ steps.check-name.outputs.name_check == 'false' || steps.check-content.outputs.content_check == 'false' }}
         run: |
           echo "::error::内容检查失败！"
-          
           if [[ "${{ steps.check-name.outputs.name_check }}" == "false" ]]; then
             echo "::error::分支名只能包含英文字母。"
           fi
-          
           if [[ "${{ steps.check-content.outputs.content_check }}" == "false" ]]; then
             echo "::error::以下文件包含非英文字符："
             echo -e "${{ steps.check-content.outputs.non_english_files }}"
             echo "::error::请确保所有文档只包含英文字符。"
           fi
-          
           exit 1
 
       - name: Comment on PR
         uses: actions/github-script@v6
         if: always()
         with:
-          github-token: ${{ secrets.PERSONAL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const nameCheck = '${{ steps.check-name.outputs.name_check }}' === 'true';
             const contentCheck = '${{ steps.check-content.outputs.content_check }}' === 'true';
             const nonEnglishFiles = `${{ steps.check-content.outputs.non_english_files }}`;
-            
             let body = '## 英文内容检查结果\n\n';
-            
-            // 分支名检查结果
             if (nameCheck) {
               body += '✅ **分支名检查:** 通过！分支名只包含英文字符。\n\n';
             } else {
-              body += '❌ **分支名检查:** 失败！分支名包含非英文字符。\n\n';
-              body += '> 分支名只能包含英文字母。\n\n';
+              body += '❌ **分支名检查:** 失败！分支名包含非英文字符。\n\n> 分支名只能包含英文字母。\n\n';
             }
-            
-            // 文档内容检查结果
             if (contentCheck) {
               body += '✅ **文档内容检查:** 通过！所有文档只包含英文字符。\n\n';
             } else {
-              body += '❌ **文档内容检查:** 失败！以下文件包含非英文字符：\n';
-              body += nonEnglishFiles + '\n\n';
-              body += '> 请确保所有文档只包含英文字符。\n\n';
+              body += '❌ **文档内容检查:** 失败！以下文件包含非英文字符：\n' +
+                      nonEnglishFiles + '\n\n> 请确保所有文档只包含英文字符。\n\n';
             }
-            
-            // 总结
             if (nameCheck && contentCheck) {
               body += '🎉 **恭喜！所有检查已通过。**';
             } else {
               body += '⚠️ **请修复上述问题后重新提交。**';
             }
-            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: body
+              body
             });
