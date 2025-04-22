@@ -1,110 +1,109 @@
 name: English Content Check
 
-# 为 GITHUB_TOKEN 授予写 issue/PR 的权限
+# 确保 workflow 有权限写评论
 permissions:
   issues: write
   pull-requests: write
 
+# 用 pull_request_target 以获得写权限（包括 fork PR）
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened, synchronize]
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   content-check:
     name: Check Branch Name and Document Content
     runs-on: ubuntu-latest
+    outputs:
+      name_check: ${{ steps.check-name.outputs.name_check }}
+      content_check: ${{ steps.check-content.outputs.content_check }}
+      non_english_files: ${{ steps.check-content.outputs.non_english_files }}
     steps:
-      - name: Checkout code
+      # 1. 检出 “工作流” 运行所在的主仓库，用来安全地读取 workflow 文件
+      - name: Checkout action repo
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.repository.default_branch }}
+          path: workflow-repo
+
+      # 2. 再检出 PR 的 head 分支代码
+      - name: Checkout PR head
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ github.token }}
+          path: pr-head
 
       - name: Check if branch name contains only English characters
         id: check-name
         run: |
-          BRANCH_NAME="${{ github.head_ref }}"
-          echo "检查分支名 $BRANCH_NAME 是否只包含英文字符..."
-          if [[ $BRANCH_NAME =~ ^[a-zA-Z]+$ ]]; then
-            echo "✅ 分支名 $BRANCH_NAME 只包含英文字符"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          if [[ "$BRANCH_NAME" =~ ^[a-zA-Z]+$ ]]; then
             echo "name_check=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ 分支名 $BRANCH_NAME 包含非英文字符"
             echo "name_check=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Get changed files
         id: changed-files
+        working-directory: pr-head
         run: |
-          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          files=$(git diff --name-only origin/${{ github.event.repository.default_branch }}...HEAD)
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "$files" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Check if documents contain only English
         id: check-content
+        working-directory: pr-head
         run: |
           CONTENT_CHECK="true"
-          NON_ENGLISH_FILES=""
-          for FILE in ${{ steps.changed-files.outputs.changed_files }}; do
-            [ ! -f "$FILE" ] && continue
-            [[ "$FILE" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]] && continue
-            if grep -P '[\x80-\xFF]' "$FILE" > /dev/null; then
-              echo "❌ 文件 $FILE 包含非英文字符"
+          NON_EN_FILES=""
+          for f in ${{ steps.changed-files.outputs.changed_files }}; do
+            [ ! -f "$f" ] && continue
+            [[ "$f" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]] && continue
+            if grep -P '[\x80-\xFF]' "$f" > /dev/null; then
               CONTENT_CHECK="false"
-              NON_ENGLISH_FILES="$NON_ENGLISH_FILES\n- $FILE"
-            else
-              echo "✅ 文件 $FILE 只包含英文字符"
+              NON_EN_FILES="$NON_EN_FILES\n- $f"
             fi
           done
           echo "content_check=$CONTENT_CHECK" >> $GITHUB_OUTPUT
           echo "non_english_files<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$NON_ENGLISH_FILES" >> $GITHUB_OUTPUT
+          echo -e "$NON_EN_FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Validate checks
-        if: ${{ steps.check-name.outputs.name_check == 'false' || steps.check-content.outputs.content_check == 'false' }}
-        run: |
-          echo "::error::内容检查失败！"
-          if [[ "${{ steps.check-name.outputs.name_check }}" == "false" ]]; then
-            echo "::error::分支名只能包含英文字母。"
-          fi
-          if [[ "${{ steps.check-content.outputs.content_check }}" == "false" ]]; then
-            echo "::error::以下文件包含非英文字符："
-            echo -e "${{ steps.check-content.outputs.non_english_files }}"
-            echo "::error::请确保所有文档只包含英文字符。"
-          fi
-          exit 1
-
-      - name: Comment on PR
+  comment:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: content-check
+    if: always()
+    steps:
+      - name: Post result comment
         uses: actions/github-script@v6
-        if: always()
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
-            const nameCheck = '${{ steps.check-name.outputs.name_check }}' === 'true';
-            const contentCheck = '${{ steps.check-content.outputs.content_check }}' === 'true';
-            const nonEnglishFiles = `${{ steps.check-content.outputs.non_english_files }}`;
+            const okName    = '${{ needs.content-check.outputs.name_check }}' === 'true';
+            const okContent = '${{ needs.content-check.outputs.content_check }}' === 'true';
+            const files     = `${{ needs.content-check.outputs.non_english_files }}`;
             let body = '## 英文内容检查结果\n\n';
-            if (nameCheck) {
-              body += '✅ **分支名检查:** 通过！分支名只包含英文字符。\n\n';
-            } else {
-              body += '❌ **分支名检查:** 失败！分支名包含非英文字符。\n\n> 分支名只能包含英文字母。\n\n';
+            if (okName) body += '✅ **分支名检查:** 通过！\n\n';
+            else {
+              body += '❌ **分支名检查:** 失败！\n> 只允许英文字母。\n\n';
             }
-            if (contentCheck) {
-              body += '✅ **文档内容检查:** 通过！所有文档只包含英文字符。\n\n';
-            } else {
-              body += '❌ **文档内容检查:** 失败！以下文件包含非英文字符：\n' +
-                      nonEnglishFiles + '\n\n> 请确保所有文档只包含英文字符。\n\n';
+            if (okContent) body += '✅ **文档内容检查:** 通过！\n\n';
+            else {
+              body += '❌ **文档内容检查:** 失败！以下文件包含非英文字符：\n' 
+                   + files + '\n\n> 请确保所有文档只包含英文。\n\n';
             }
-            if (nameCheck && contentCheck) {
-              body += '🎉 **恭喜！所有检查已通过。**';
-            } else {
-              body += '⚠️ **请修复上述问题后重新提交。**';
-            }
+            if (okName && okContent) body += '🎉 **全部通过！**';
+            else body += '⚠️ **请修复后重新提交。**';
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
+              issue_number: context.issue.number,
               body
             });
