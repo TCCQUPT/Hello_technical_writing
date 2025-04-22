@@ -1,5 +1,3 @@
-name: English Content Check
-
 permissions:
   issues: write
   pull-requests: write
@@ -59,9 +57,10 @@ jobs:
           CONTENT_CHECK="true"
           NON_EN_FILES=""
           for f in ${{ steps.changed-files.outputs.changed_files }}; do
+            # Only check Markdown files
+            [[ "$f" =~ \.md$ ]] || continue
             [ ! -f "$f" ] && continue
-            [[ "$f" =~ \.(png|jpg|jpeg|gif|svg|ico|pdf|zip|exe|dll|so|dylib)$ ]] && continue
-            # 如果文件中匹配到任何中文字符，就算失败
+            # Check for Chinese characters in Markdown files
             if grep -E '[一-龥]' "$f" >/dev/null; then
               CONTENT_CHECK="false"
               NON_EN_FILES="$NON_EN_FILES\n- $f"
@@ -95,7 +94,7 @@ jobs:
             if (okContent) {
               body += '✅ **文档内容检查:** 通过！未发现中文字符。\n\n';
             } else {
-              body += '❌ **文档内容检查:** 失败！以下文件包含中文：\n'
+              body += '❌ **文档内容检查:** 失败！以下Markdown文件包含中文：\n'
                    + files + '\n\n> 请移除所有中文字符后重新提交。\n\n';
             }
             if (okName && okContent) {
