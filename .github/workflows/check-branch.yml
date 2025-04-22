@@ -7,7 +7,7 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
 
 jobs:
   content-check:
@@ -106,7 +106,7 @@ jobs:
         uses: actions/github-script@v6
         if: always()
         with:
-          github-token: ${{ secrets.PERSONAL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const nameCheck = '${{ steps.check-name.outputs.name_check }}' === 'true';
             const contentCheck = '${{ steps.check-content.outputs.content_check }}' === 'true';
