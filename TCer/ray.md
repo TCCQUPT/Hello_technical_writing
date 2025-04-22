@@ -1,3 +1,3 @@
 # ray
-## CQUPTdafsadfsadfsa
-### Love words and codeshahadfsafasdafsdfa
+## CQUPT
+### Love words and code!
