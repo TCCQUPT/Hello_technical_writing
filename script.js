@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     "slogan": "HELLO HELLO MY BRO"
   },
   {
+    "name": "Quinn",
+    "school": "cqupt",
+    "slogan": "HEY"
+  },
+  {
     "name": "yiyialways",
     "school": "CQUPT",
     "slogan": "Welcome each contributor!"
