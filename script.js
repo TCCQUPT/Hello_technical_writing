@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
     "slogan": "HEY"
   },
   {
+    "name": "Sylvia",
+    "school": "CQUPT",
+    "slogan": "Less is More"
+  },
+  {
     "name": "durian",
     "school": "CQUPT",
     "slogan": "Love freedom!"
