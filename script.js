@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   {
     "name": "Jiven_1",
     "school": "CQUPT",
-    "slogan": "二婚老公是个灵"
+    "slogan": "来吧走起！"
   },
   {
     "name": "yiyialways",
