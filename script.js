@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     "slogan": "来吧走起！"
   },
   {
+    "name": "Juanmaodada",
+    "school": "CQUPT",
+    "slogan": "HELLO HELLO MY BRO"
+  },
+  {
     "name": "yiyialways",
     "school": "CQUPT",
     "slogan": "Welcome each contributor!"
