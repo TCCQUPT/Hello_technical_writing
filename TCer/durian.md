@@ -1,3 +1,3 @@
 # durian
 ## CQUPT
-### Love freedom
+### Love freedom!
