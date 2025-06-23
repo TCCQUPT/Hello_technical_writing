@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     "slogan": "Less is More"
   },
   {
-    "name": "TXR",
+    "name": "Siriiiiii",
     "school": "CQUPT",
-    "slogan": "I am just a fat head fish"
+    "slogan": "我真的要饿晕了！~"
   },
   {
     "name": "durian",
