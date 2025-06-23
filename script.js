@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   {
     "name": "Siriiiiii",
     "school": "CQUPT",
-    "slogan": "我真的要饿晕了！~"
+    "slogan": "KFC V50~~"
   },
   {
     "name": "durian",
